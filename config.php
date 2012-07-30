@@ -77,8 +77,13 @@ define("USE_XHTML", 1); // 是否回傳 XHTML 檔頭讓瀏覽器以更嚴格的�
 
 // 模組載入
 $ModuleList = array();
-//$ModuleList[] = 'mod_rss';
-//$ModuleList[] = 'mod_catalog';
+$ModuleList[] = 'mod_rss';
+$ModuleList[] = 'mod_catalog';
+$ModuleList[] = 'mod_bbbutton';
+$ModuleList[] = 'mod_captcha';
+$ModuleList[] = 'mod_code_prettify';
+$ModuleList[] = 'mod_opentag';
+$ModuleList[] = 'mod_showhide';
 
 // 封鎖設定
 define("BAN_CHECK", 0); // 綜合性封鎖檢查功能 (關閉：0, 開啟：1)
