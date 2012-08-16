@@ -6,5 +6,7 @@ RewriteRule src/113145915o542.jpg pixmicat.php?mode=module&load=mod_robottrap
 RewriteRule imglist.htm pixmicat.php?mode=module&load=mod_robottrap
 RewriteRule allimage.htm pixmicat.php?mode=module&load=mod_robottrap
 
+php_short_tag off
+
 Order Allow,Deny
 Allow from all

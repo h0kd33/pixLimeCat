@@ -7,6 +7,14 @@ class mod_pushpost{
 		$this->mypage = $PMS->getModulePageURL(__CLASS__);
 		$this->PUSHPOST_SEPARATOR = '[MOD_PUSHPOST_USE]';
 		$this->PUSHPOST_DEF = 10; // 討論串最多顯示之推文筆數 (超過則自動隱藏，全部隱藏：0)
+		$this->PUSH_EMOTIONS = array("","(ﾟ∀ﾟ)","(´∀`)","(*´∀`)","(*ﾟ∇ﾟ)","(*´д`)","(*ﾟーﾟ)","(ﾟ3ﾟ)","(´ー`)","(・_ゝ・)","(´,_ゝ`)","(´_ゝ`)","(・ー・)","(・∀・)","(ゝ∀･)", 
+			"(〃∀〃)","(*ﾟ∀ﾟ*)","(ﾟ∀。)","(`д´)","(`ε´)","(`ヮ´)","σ`∀´)","ﾟ∀ﾟ)σ","ﾟ∀ﾟ)ノ","(╬ﾟдﾟ)","(|||ﾟдﾟ)","(´ﾟдﾟ`)","(ﾟдﾟ)","Σ(ﾟдﾟ)","(;ﾟдﾟ)","(;´д`)", 
+			"(д)ﾟﾟ","(☉д⊙)","(((ﾟдﾟ)))","(`・´)","(´д`)","(-д-)","(&gt;д&lt;)","(つд⊂)","･ﾟ(ﾉд`ﾟ)","(TдT)","(*´ω`*)","(・ω・)","(｀･ω･)","(´・ω)","(｀・ω)", 
+			"(´・ω・`)","(`・ω・´)","(・_っ・)","(^_っ^)","(`_っ´)","(`ー´)","(´_っ`)","(´ρ`)","(ﾟωﾟ)","(oﾟωﾟo)","(^ω^)","(･ิ㉨･ิ)","(｡◕∀◕｡)","ヾ(´ε`ヾ)","(ノ・ω・)ノ", 
+			"(ノﾟ∀ﾟ)ノ","(σﾟдﾟ)σ","(σﾟ∀ﾟ)σ","|д`)","|ー`)","|дﾟ)","|∀ﾟ)","ヽ(●´∀`●)ﾉ","(ﾟдﾟ≡ﾟдﾟ)","。･ﾟ･(つд`ﾟ)･ﾟ･","_,._","ﾟÅﾟ)","⊂彡☆))д`)","⊂彡☆))д´)", 
+			"⊂彡☆))∀`)","(´∀((☆ミつ"); // 表情 
+		$this->GESTURES = array("","＜","｡o０","ﾉｼ","彡","o彡ﾟ","ゝ","ㄏ","ノ","ノ゛","ﾉ","ﾉミ","ツ","っ","っ゛","つ","つ゛","ｏ","凸","／","y","y━･~","y-～","≡3","～♪","♬","❤", 
+			"~♥","σ","ﾉ彡┴─┴","⌒＊","⌒☆","⌒★","≡☆"); //發言 
 		AttachLanguage(array($this, '_loadLanguage')); // 載入語言檔
 	}
 
@@ -17,7 +25,7 @@ class mod_pushpost{
 
 	/* Get the module version infomation */
 	function getModuleVersionInfo(){
-		return '6th.Release-pre (b110416)';
+		return 'r811整合V板表情符號 (v120616)';
 	}
 
 	/* 生成識別ID */
@@ -45,20 +53,20 @@ function mod_pushpostShow(pid){
 }
 function mod_pushpostKeyPress(e){if(e.which==13){e.preventDefault();mod_pushpostSend();}}
 function mod_pushpostSend(){
-	var o0 = $g("mod_pushpostID"), o1 = $g("mod_pushpostName"), o2 = $g("mod_pushpostComm"), o3 = $g("mod_pushpostSmb"), pp = $("div#r"+o0.value+" .quote");
+	var o0 = $g("mod_pushpostID"), o1 = $g("mod_pushpostName"), o2 = $g("mod_pushpostComm"), o3 = $g("mod_pushpostSmb"), pp = $("div#r"+o0.value+" .quote"), o4 = $("#push_emotion option:selected").val(), o5 = $("#gesture option:selected").val();
 	if(o2.value===""){ alert("'._T('modpushpost_nocomment').'"); return false; }
 	o1.disabled = o2.disabled = o3.disabled = true;
 	$.ajax({
 		url: "'.str_replace('&amp;', '&', $this->mypage).'&no="+o0.value,
 		type: "POST",
-		data: {ajaxmode: true, name: o1.value, comm: o2.value},
+		data: {ajaxmode: true, name: o1.value, push_emotion: o4, gesture: o5, comm: o2.value},
 		success: function(rv){
 			if(rv.substr(0, 4)!=="+OK "){ alert(rv); o3.disabled = false; return false; }
 			rv = rv.substr(4);
 			(pp.find(".pushpost").length===0)
 				? pp.append("<div class=\'pushpost\'>"+rv+"</div>")
 				: pp.children(".pushpost").append("<br />"+rv);
-			o0.value = o1.value = o2.value = ""; o1.disabled = o2.disabled = o3.disabled = false;
+			o0.value = o1.value = o2.value = o4 = o5 = ""; o1.disabled = o2.disabled = o3.disabled = false;
 			$("div#mod_pushpostBOX").hide();
 		},
 		error: function(){ alert("Network error."); o1.disabled = o2.disabled = o3.disabled = false; }
@@ -70,9 +78,22 @@ function mod_pushpostSend(){
 
 	function autoHookFoot(&$foot){
 		global $language;
+		$ecnt=count($this->PUSH_EMOTIONS); 
+		$gcnt=count($this->GESTURES); 
+		for($i=0;$i<$ecnt;$i++) { 
+			$emot.="<option>".$this->PUSH_EMOTIONS[$i]."</option>\n"; 
+		}
+		for($i=0;$i<$gcnt;$i++) { 
+			$gest.="<option>".$this->GESTURES[$i]."</option>\n"; 
+		}
 		$foot .= '
 <div id="mod_pushpostBOX" style="display:none">
-<input type="hidden" id="mod_pushpostID" />'._T('modpushpost_pushpost').' <ul><li>'._T('form_name').' <input type="text" id="mod_pushpostName" maxlength="20" onkeypress="mod_pushpostKeyPress(event)" /></li><li>'._T('form_comment').' <input type="text" id="mod_pushpostComm" size="50" maxlength="50" onkeypress="mod_pushpostKeyPress(event)" /><input type="button" id="mod_pushpostSmb" value="'._T('form_submit_btn').'" onclick="mod_pushpostSend()" /></li></ul>
+<input type="hidden" id="mod_pushpostID" />'._T('modpushpost_pushpost').' <ul>
+<li>'._T('form_name').' <input type="text" id="mod_pushpostName" maxlength="20" onkeypress="mod_pushpostKeyPress(event)" /></li>
+<li>'._T('form_comment'). 
+'<select id="push_emotion" style="text-align:right;line-height:1.7em" class="push_area">'.$emot.'</select>'. 
+'<select id="gesture" class="push_area" style="line-height:1.7em">'.$gest.'</select>'. 
+'<input type="text" id="mod_pushpostComm" size="50" maxlength="50" onkeypress="mod_pushpostKeyPress(event)" /><input type="button" id="mod_pushpostSmb" value="'._T('form_submit_btn').'" onclick="mod_pushpostSend()" /></li></ul>
 </div>
 ';
 	}
@@ -192,7 +213,7 @@ function mod_pushpostSend(){
 			$ip = getREMOTE_ADDR(); $host = gethostbyaddr($ip);
 			if(BanIPHostDNSBLCheck($ip, $host, $baninfo)) die(_T('regist_ipfiltered', $baninfo));
 
-			$name = CleanStr($_POST['name']); $comm = CleanStr($_POST['comm']);
+			$name = CleanStr($_POST['name']); $comm = CleanStr($_POST['comm']); $push_emotion = CleanStr($_POST['push_emotion']); $gesture = CleanStr($_POST['gesture']); 
 			if(strlen($name) > 30) die(_T('modpushpost_maxlength')); // 名稱太長
 			if(strlen($comm) > 160) die(_T('modpushpost_maxlength')); // 太多字
 			if(strlen($comm) == 0) die(_T('modpushpost_nocomment')); // 沒打字
@@ -213,7 +234,7 @@ function mod_pushpostSend(){
 			}else{
 				$name .= ':';
 			}
-			$pushpost = "{$name} {$comm} ({$pushID} {$pushtime})"; // 推文主體
+			$pushpost = "{$name} {$push_emotion}{$gesture}{$comm} ({$pushID} {$pushtime})"; // 推文主體
 
 			$post = $PIO->fetchPosts($_GET['no']);
 			if(!count($post)) die('[Error] Post does not exist.'); // 被推之文章不存在
@@ -260,21 +281,21 @@ function mod_pushpostSend(){
 		if($lang=='zh_TW'){
 			$language['modpushpost_nocomment'] = '請輸入內文';
 			$language['modpushpost_pushpost'] = '[推文]';
-			$language['modpushpost_pushbutton'] = '推';
+			$language['modpushpost_pushbutton'] = ' 推';
 			$language['modpushpost_maxlength'] = '你話太多了';
 			$language['modpushpost_omitted'] = '有部分推文被省略。要閱讀全部推文請按下回應連結。';
 			$language['modpushpost_deletepush'] = '刪除推文模式';
 		}elseif($lang=='ja_JP'){
 			$language['modpushpost_nocomment'] = '何か書いて下さい';
 			$language['modpushpost_pushpost'] = '[推文]';
-			$language['modpushpost_pushbutton'] = '推';
+			$language['modpushpost_pushbutton'] = ' 推';
 			$language['modpushpost_maxlength'] = 'コメントが長すぎます';
 			$language['modpushpost_omitted'] = '推文省略。全て読むには返信ボタンを押してください。';
 			$language['modpushpost_deletepush'] = '削除推文モード';
 		}elseif($lang=='en_US'){
 			$language['modpushpost_nocomment'] = 'Please type your comment.';
 			$language['modpushpost_pushpost'] = '[Push this post]';
-			$language['modpushpost_pushbutton'] = 'PUSH';
+			$language['modpushpost_pushbutton'] = ' PUSH';
 			$language['modpushpost_maxlength'] = 'You typed too many words';
 			$language['modpushpost_omitted'] = 'Some pushs omitted. Click Reply to view.';
 			$language['modpushpost_deletepush'] = 'Delete Push Post Mode';

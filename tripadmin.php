@@ -285,3 +285,10 @@ HTML;
 	
 	HtmlFooter($goto);
 ?>
+rm action=\"".$_SERVER['PHP_SELF']."?action=login\" method=\"POST\">ユーザー：<INPUT type=\"text\" name=\"username\"><br />パスワード：<INPUT type=\"password\" name=\"password\"><INPUT type=\"submit\" value=\"認証\"></form>";
+		}
+		break;
+	}
+	
+	HtmlFooter($goto);
+?>
